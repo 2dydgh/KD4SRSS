@@ -22,7 +22,7 @@ import torchvision
 import torchvision.transforms as transforms
 from torchvision.transforms.functional import to_pil_image
 
-import ignite   #pytorch ignite
+import ignite   
 
 import argparse
 import matplotlib.pyplot as plt
@@ -37,10 +37,10 @@ from utils.data_load_n_save import *
 from utils.data_tool import *
 from utils.checkpoint import load_checkpoint
 
-from _pkl_mkr.pkl_loader import PklLoader                       # trainer v 1.3.2 fix 2 에서 추가됨
+from _pkl_mkr.pkl_loader import PklLoader                       
 
-from mps.mp_sssr_plt_saver import plts_saver as plts_saver_sssr     # support: model_a, model_proposed, model_d, model_aa
-from mps.mp_dataloader     import DataLoader_multi_worker_FIX       # now multi-worker can be used on windows 10
+from mps.mp_sssr_plt_saver import plts_saver as plts_saver_sssr   
+from mps.mp_dataloader     import DataLoader_multi_worker_FIX       
 
 
 # Semantic Segmentation
@@ -187,7 +187,6 @@ def one_epoch_gt_kd_sr_2_ss(**kargs):
     for i_key in list_mode:
         _str = "batch,file_name,"
         _str += "loss_t_(" + i_key + "),loss_s_(" + i_key + "),loss_m_(" + i_key + "),"
-        _str += "loss_base_(" + i_key + "),loss_kd_(" + i_key + "), loss_feat_(" + i_key + "),"  # 추가된 부분
         _str += "PSNR_t_(" + i_key + "),SSIM_t_(" + i_key + "),PSNR_s_(" + i_key + "),SSIM_s_(" + i_key + "),"
         _str += "Pixel_Acc_(" + i_key + "),Class_Acc_(" + i_key + "),mIoU_(" + i_key + "),"
         _str += HP_DATASET_CLASSES
@@ -276,7 +275,7 @@ def one_epoch_gt_kd_sr_2_ss(**kargs):
             dl_pil_img_lr = None
 
         try:
-            #gray 이미지 형태 [B, 1, H, W]
+            
             dl_ts_lab_hr_gray = torch.round(dataloader_items[4]*255).type(torch.uint8)
         except:
             dl_ts_lab_hr_gray = None
@@ -314,7 +313,7 @@ def one_epoch_gt_kd_sr_2_ss(**kargs):
             _dl_ts_lab_hr_gray = _dl_ts_lab_hr_gray.to(device)
             dl_ts_lab_hr_gray = dl_ts_lab_hr_gray.to(device)
 
-        dl_ts_img_lr_copy = dl_ts_img_lr.clone().detach()   # dl_ts_img_lr for model_t
+        dl_ts_img_lr_copy = dl_ts_img_lr.clone().detach()   
         dl_ts_img_lr_copy = dl_ts_img_lr_copy.requires_grad_(True)
         dl_ts_img_lr      = dl_ts_img_lr.requires_grad_(True)
 
@@ -336,9 +335,6 @@ def one_epoch_gt_kd_sr_2_ss(**kargs):
                 tensor_out_s_raw = model_s(dl_ts_img_lr)
                 total_loss = criterion_s(tensor_out_s_raw, dl_ts_img_hr, tensor_out_t_raw_copy)
                 loss_s = total_loss[-1]
-                # loss_base = total_loss[0]
-                # loss_kd = total_loss[1]
-                # loss_feat = total_loss[2]
 
                 if isinstance(tensor_out_s_raw, list):
                     tensor_out_s = tensor_out_s_raw[0]
@@ -351,14 +347,12 @@ def one_epoch_gt_kd_sr_2_ss(**kargs):
                 tensor_out_sr_mixup = tensor_out_sr_mixup.requires_grad_(True)
                 tensor_out_seg = model_m(tensor_out_sr_mixup)
 
-                # label 예측결과 softmax 시행
                 tensor_out_seg_softmax = F.softmax(tensor_out_seg, dim = 1)
                 if CALC_WITH_LOGIT:
                     loss_m = criterion_m(tensor_out_seg, _dl_ts_lab_hr_gray)
                 else:
                     loss_m = criterion_m(tensor_out_seg_softmax, _dl_ts_lab_hr_gray)
 
-                # softmax 값을 바탕으로 label image 형태로 tensor 생성 (형태 변경 4D [B, C, H, W] -> 3D [B, H, W]) -> 이미지 생성에 사용됨
                 tensor_out_seg_label = torch.argmax(tensor_out_seg_softmax.clone().detach().requires_grad_(False), dim = 1)
 
                 # combined loss for joint optimization
@@ -388,9 +382,6 @@ def one_epoch_gt_kd_sr_2_ss(**kargs):
                 tensor_out_s_raw = model_s(dl_ts_img_lr)
                 total_loss = criterion_s(tensor_out_s_raw, dl_ts_img_hr, tensor_out_t_raw)
                 loss_s = total_loss[-1]
-                # loss_base = total_loss[0]
-                # loss_kd = total_loss[1]
-                # loss_feat = total_loss[2]
 
                 if isinstance(tensor_out_s_raw, list):
                     tensor_out_s = tensor_out_s_raw[0]
@@ -579,7 +570,7 @@ def one_epoch_gt_kd_sr_2_ss(**kargs):
              ,end = '')
 
         timer_cpu_start = time.time()
-        #>>> 후처리
+    
 
         i_batch += 1
 
@@ -679,8 +670,8 @@ def one_epoch_gt_kd_sr_2_ss(**kargs):
         tmp_is_best = dict_rb_t[i_mode]["psnr"].is_best_max or dict_rb_t[i_mode]["ssim"].is_best_max or dict_rb_s[i_mode]["ssim"].is_best_max or dict_rb_s[i_mode]["psnr"].is_best_max or dict_rb_m[i_mode]["ious"].is_best_max # PSNR 기준 or mIoU 기준
 
         if tmp_is_best:
-            print("\n< Best Valid Epoch > Model State Dict 저장됨")
-            tmp_path = PATH_OUT_MODEL + "state_dicts/"  # state_dict 저장경로
+            print("\n< Best Valid Epoch > Model State Dict saved")
+            tmp_path = PATH_OUT_MODEL + "state_dicts/" 
             if not os.path.exists(tmp_path):
                 os.makedirs(tmp_path)
             # Teacher, Student, seMantic segmentation model state dict
@@ -912,13 +903,13 @@ def trainer_(**kargs):
     criterion_s     = kargs['criterion_s']
     scheduler_s     = kargs['scheduler_s']
 
-    model_m         = kargs['model_m']          # seMantic segmentation model
+    model_m         = kargs['model_m']
     optimizer_m     = kargs['optimizer_m']
     criterion_m     = kargs['criterion_m']
     scheduler_m     = kargs['scheduler_m']
 
 
-    HP_MIXUP_A = float(kargs['HP_MIXUP_A']) # (ks_sr_2_ss) mixup
+    HP_MIXUP_A = float(kargs['HP_MIXUP_A']) 
 
     update_dict_v2("", ""
                   ,"", "(gt_kd_sr_2_ss, HP_MIXUP_A) SR (T) and SR (S) mixup: " + str(HP_MIXUP_A)
@@ -1043,9 +1034,7 @@ def trainer_(**kargs):
         is_norm_in_transform_to_tensor = False
 
     if is_norm_in_transform_to_tensor:
-        # 평균
         HP_TS_NORM_MEAN = kargs['HP_TS_NORM_MEAN']
-        # 표준편차
         HP_TS_NORM_STD = kargs['HP_TS_NORM_STD']
         transform_to_ts_img = transforms.Compose([transforms.ToTensor()
                                                  ,transforms.Normalize(mean = HP_TS_NORM_MEAN, std = HP_TS_NORM_STD)
@@ -1247,7 +1236,7 @@ def trainer_(**kargs):
             if HP_LABEL_VERIFY:
                 update_dict_v2("", ""
                               ,"", "Label Verify in train"
-                              ,"", "라벨 re-crop max " + str(HP_LABEL_VERIFY_TRY_CEILING)
+                              ,"", "re-crop max " + str(HP_LABEL_VERIFY_TRY_CEILING)
                               ,"", "class min: " + str(HP_LABEL_VERIFY_CLASS_MIN)
                               ,"", "class max ratio (0 ~ 1): " + str(HP_LABEL_VERIFY_RATIO_MAX)
                               ,in_dict = dict_log_init
@@ -1527,25 +1516,20 @@ def trainer_(**kargs):
                 ,dataloader_test    = dataloader_test
                 )
 
-        print("피클 생성 완료 -> 프로세스 종료")
+        print("pkl completed")
         sys.exit(0)
     else:
-        print("피클 생성기 사용 안함")
+        print("no use pkl_maker")
     #>> pkl_maker
 
-    #<< Load check_point
-    # There is no check point in our life.
-    #>> Load check_point
 
     print("\nPause before init trainer")
     time.sleep(3)
 
-    # 1 epoch 마다 시행할 mode list
     list_mode = ["train", "val", "test"]
 
 
     def _generate_dict_dict_log_total(list_mode, HP_DATASET_CLASSES, mode=None):
-        # mode: "sr_n_ss", "kd_sr_2_ss", "gt_kd_sr_2_ss"
         dict_return = {list_mode[0] : {}
                       ,list_mode[1] : {}
                       ,list_mode[2] : {}
@@ -1572,7 +1556,7 @@ def trainer_(**kargs):
 
         return dict_return
 
-    dict_dict_log_total_1 = _generate_dict_dict_log_total(list_mode, HP_DATASET_CLASSES, mode="gt_kd_sr_2_ss")  # gt_kd_sr_2_ss
+    dict_dict_log_total_1 = _generate_dict_dict_log_total(list_mode, HP_DATASET_CLASSES, mode="gt_kd_sr_2_ss")  
 
     def _generate_record_box_s(in_name, in_list):
         dict_return = {}
@@ -1608,7 +1592,7 @@ def trainer_(**kargs):
 
     def ignite_eval_step(engine, batch):
         return batch
-    ignite_evaluator = ignite.engine.Engine(ignite_eval_step)           # 이거로 측정하면 됨
+    ignite_evaluator = ignite.engine.Engine(ignite_eval_step)         
     ignite_psnr = ignite.metrics.PSNR(data_range=1.0, device=device)
     ignite_psnr.attach(ignite_evaluator, 'psnr')
     ignite_ssim = ignite.metrics.SSIM(data_range=1.0, device=device)
@@ -1652,7 +1636,7 @@ def trainer_(**kargs):
         else:
             _ETA = "Calculating..."
 
-        print("\n=== gt_kd_sr_2_ss ===\n")    # gt_kd_sr_2_ss --------------------------------------------------------------------  #
+        print("\n=== gt_kd_sr_2_ss ===\n")    
         print("Estimated Finish Time:", _ETA)
 
         model_t.to(device)
@@ -1664,11 +1648,11 @@ def trainer_(**kargs):
             print("--- init gt_kd_sr_2_ss", i_mode, "---")
 
             if i_mode == "test" and is_best is not None:
-                if SKIP_TEST_UNTIL >= i_epoch + 1:  # i_epoch 는 0 부터 시작
-                    print(SKIP_TEST_UNTIL, "epoch 까지 test 생략 ~")
+                if SKIP_TEST_UNTIL >= i_epoch + 1:  
+                    print(SKIP_TEST_UNTIL, ": Skip the test until this epoch")
                     continue
                 elif is_best == False:
-                    print("이번 epoch test 생략 ~")
+                    print("Skip this epoch test")
                     continue
 
 
@@ -1688,7 +1672,6 @@ def trainer_(**kargs):
             is_best =one_epoch_gt_kd_sr_2_ss(WILL_SAVE_IMAGE = WILL_SAVE_IMAGE
 
                                             ,CALC_WITH_LOGIT = CALC_WITH_LOGIT
-                                             #TRAINER_MODE = TRAINER_MODE
                                             ,list_mode = list_mode
                                             ,i_mode    = i_mode
                                             ,HP_EPOCH  = HP_EPOCH

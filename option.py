@@ -35,7 +35,6 @@ def apply_int_if_not_None(default, arg_parser, arg_parser_name="arg_parser"):
             return int(default)
         else:
             if not isinstance(arg_parser, int):
-                # check it again
                 _str = arg_parser_name + " should be int, received " + str(arg_parser)
                 warnings.warn(_str)
                 sys.exit(-9)
@@ -46,7 +45,6 @@ def apply_float_if_not_None(default, arg_parser, arg_parser_name="arg_parser"):
             return float(default)
         else:
             if not isinstance(arg_parser, float):
-                # check it again
                 _str = arg_parser_name + " should be float, received " + str(arg_parser)
                 warnings.warn(_str)
                 sys.exit(-9)

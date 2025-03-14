@@ -14,7 +14,7 @@ import copy
 from PIL import Image
 
 from torchinfo import summary
-from thop import profile as profile_thop    # https://github.com/Lyken17/pytorch-OpCounter
+from thop import profile as profile_thop    
 from DLCs.FLOPs import profile
 from utils.calc_margin import calculate_margin
 
@@ -22,7 +22,6 @@ from utils.calc_margin import calculate_margin
 
 # Conv 2D with stride=1 & dilation=1
 def Conv_(in_c, out_c, k_size=3, groups=1, bias=False, padding_mode='replicate'):
-    # https://pytorch.org/docs/stable/generated/torch.nn.Conv2d.html
     p_size = int((k_size - 1)//2) # padding size
 
     if k_size-1 != 2*p_size:
@@ -38,7 +37,6 @@ def Conv_(in_c, out_c, k_size=3, groups=1, bias=False, padding_mode='replicate')
 
 # Conv 2D with kernel=3 & stride=1
 def Conv_3x3(in_c, out_c, d_size=1, groups=1, bias=False, padding_mode='replicate'):
-    # https://pytorch.org/docs/stable/generated/torch.nn.Conv2d.html
     p_size = int(d_size) # set padding size with dilation value
 
     return nn.Conv2d(in_channels=in_c, out_channels=out_c
@@ -245,7 +243,6 @@ class model_I2F(nn.Module):
 
 
 class model_F2I(nn.Module):
-    # def __init__(self, mid_c=42, out_c=3, scale=4):
     def __init__(self, mid_c, out_c, scale):
         super(model_F2I, self).__init__()
 
@@ -286,7 +283,6 @@ class proposed_model(nn.Module):
         mid_feat, list_feats = self.layer_I2F(in_x)
 
         return [self.layer_F2I(in_x, mid_feat), list_feats]
-        # return self.layer_F2I(in_x, mid_feat)
 
 #===================================================================================
 # related to knowledge distillation
@@ -324,7 +320,6 @@ class BA_kernel(nn.Module):  # Boundary Aware kernel
 
     def forward(self, x):
         edge = self.log_filter(x)
-        # return x + (1 - self.beta) * edge
         return self.beta * x + (1 - self.beta) * edge
 
 class MLP(nn.Module):
@@ -341,7 +336,7 @@ class MLP(nn.Module):
 
     def forward(self, x):
 
-        x = self.mlp(x)  # MLP Transformation
+        x = self.mlp(x)  
         x = self.dropout(x)
 
         return x
@@ -358,7 +353,7 @@ class proposed_loss(nn.Module):
 
         print("\nproposed_loss")
         print("kd_mode:", self.kd_mode)
-        print("loss 가중치 alpha:", self.alpha)
+        print("alpha:", self.alpha)
 
     # def kd_origin(in_feat):
         # # original KD
@@ -394,10 +389,10 @@ class proposed_loss(nn.Module):
             return sa.unsqueeze(1)
 
     def kd_ofd(self, fm_s, fm_t):
-        margin = calculate_margin(fm_t)  # margin 계산
+        margin = calculate_margin(fm_t)
         fm_t = torch.max(fm_t, margin)
         mask = 1.0 - ((fm_s <= fm_t) & (fm_t <= 0.0)).float()
-        return (fm_s, fm_t, mask)  # 변환된 feature 반환
+        return (fm_s, fm_t, mask) 
 
     def kd_mlp(self, in_feat):
         B, C, H, W = in_feat.shape
@@ -407,9 +402,8 @@ class proposed_loss(nn.Module):
         if not hasattr(self, "ch_mlp"):
             self.ch_mlp = MLP(in_channels=C, hidden_dim=256, num_layers=3, dropout=0.1).to(in_feat.device)
 
-        out_feat = self.ch_mlp(in_feat)  # (B, H*W, C)
+        out_feat = self.ch_mlp(in_feat)  
 
-        # (B, H*W, C) → (B, C, H, W)
         out_feat = out_feat.view(B, H, W, C).permute(0, 3, 1, 2)
 
         return out_feat
@@ -451,7 +445,6 @@ class proposed_loss(nn.Module):
                 in_teacher_feat = None
 
         except:
-            # print("in_teacher is None")
             in_teacher = None
 
         if in_teacher is None:
@@ -538,8 +531,8 @@ class proposed_loss_ss(nn.Module):
         _ans  = in_ans.clone().detach()
 
         _B, _, _ = _ans.shape
-        _ans = _ans.view([-1])  # (B, H, W) -> (BHW)
-        _bin = torch.bincount(_ans, minlength=self.pred_classes)[:self.pred_classes] # (BHW) -> (Index except void)
+        _ans = _ans.view([-1]) 
+        _bin = torch.bincount(_ans, minlength=self.pred_classes)[:self.pred_classes] 
         _norm = 1 - torch.nn.functional.normalize(_bin.float(), p=1, dim=0)
 
         return _norm

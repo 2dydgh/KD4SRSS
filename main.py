@@ -108,7 +108,7 @@ if __name__ == '__main__':
                   )
 
     # [Input HR Image]------------------------
-    path_alter_hr_image = None                      # 원본 이미지 사용
+    path_alter_hr_image = None                    
 
     update_dict_v2("", ""
                   ,"", "HR Image information"
