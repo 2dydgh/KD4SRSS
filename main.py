@@ -14,7 +14,7 @@ if __name__ == '__main__':
     if args_options.overwrite:
         print("\n---[ Overwrite true ]---\n")
     elif os.path.isdir(PATH_BASE_OUT):
-        print("Prevent overwriting results function activated!")
+        print("[Prevent overwriting]")
         sys.exit("Prevent overwriting results function activated")
 
     #--- args_options.ssn
