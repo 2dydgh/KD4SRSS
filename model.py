@@ -322,23 +322,6 @@ class BA_kernel(nn.Module):  # Boundary Aware kernel
         edge = self.log_filter(x)
         return self.beta * x + (1 - self.beta) * edge
 
-class MLP(nn.Module):
-
-    def __init__(self, in_channels, hidden_dim=256, num_layers=3, dropout=0.1):
-        super(MLP, self).__init__()
-        self.mlp = nn.Sequential(
-            nn.Linear(in_channels, hidden_dim),
-            nn.ReLU(),
-            *[nn.Linear(hidden_dim, hidden_dim) for _ in range(num_layers - 1)],
-            nn.Linear(hidden_dim, in_channels)
-        )
-        self.dropout = nn.Dropout(p=dropout)
-
-    def forward(self, x):
-
-        x = self.mlp(x)  
-        x = self.dropout(x)
-
         return x
 
 # ===================================================================================
@@ -358,63 +341,6 @@ class proposed_loss(nn.Module):
     # def kd_origin(in_feat):
         # # original KD
         # return in_feat
-
-    def kd_fitnet(in_feat):
-        # FitNet KD
-        return in_feat
-
-    def kd_at(self, in_feat):
-        # attention transfer (AT)
-        eps = 1e-6
-        am = torch.pow(torch.abs(in_feat), 2)
-        am = torch.sum(am, dim=1, keepdim=True)
-        norm = torch.norm(am, dim=(2,3), keepdim=True)
-        return torch.div(am, norm+eps)
-
-    def kd_fsp(self, in_feat_1, in_feat_2):
-        # flow of solution procedure (FSP)
-        _B, _C, _H, _W = in_feat_2.shape
-        in_feat_1 = F.adaptive_avg_pool2d(in_feat_1, (_H, _W))
-        in_feat_1 = in_feat_1.view(_B, _C, -1)
-        in_feat_2 = in_feat_2.view(_B, _C, -1).transpose(1,2)
-        return torch.bmm(in_feat_1, in_feat_2) / (_H*_W)
-
-    def kd_fakd(self, in_feat):
-        # Feature-affinity based knowledge distillation (FAKD)
-        with torch.no_grad(): # from m 1.53 fix 2
-            _B, _C, _H, _W = in_feat.shape
-            in_feat = in_feat.view(_B, _C, -1)
-            norm_fm = in_feat / (torch.sqrt(torch.sum(torch.pow(in_feat,2), 1)).unsqueeze(1).expand(in_feat.shape) + 1e-8)
-            sa = norm_fm.transpose(1,2).bmm(norm_fm)
-            return sa.unsqueeze(1)
-
-    def kd_ofd(self, fm_s, fm_t):
-        margin = calculate_margin(fm_t)
-        fm_t = torch.max(fm_t, margin)
-        mask = 1.0 - ((fm_s <= fm_t) & (fm_t <= 0.0)).float()
-        return (fm_s, fm_t, mask) 
-
-    def kd_mlp(self, in_feat):
-        B, C, H, W = in_feat.shape
-
-        in_feat = in_feat.permute(0, 2, 3, 1).reshape(B, H * W, C)
-
-        if not hasattr(self, "ch_mlp"):
-            self.ch_mlp = MLP(in_channels=C, hidden_dim=256, num_layers=3, dropout=0.1).to(in_feat.device)
-
-        out_feat = self.ch_mlp(in_feat)  
-
-        out_feat = out_feat.view(B, H, W, C).permute(0, 3, 1, 2)
-
-        return out_feat
-
-    def kd_attnfd(self, in_feat):
-        eps = 1e-6
-
-        in_feat_norm = in_feat / (torch.norm(in_feat, p=2, dim=(2, 3), keepdim=True) + eps)
-
-        return in_feat_norm
-
 
     def kd_bakd(self, in_feat):
         try:
@@ -466,37 +392,8 @@ class proposed_loss(nn.Module):
 
             else:
                 for i_feat in range(_feat_count):
-                    if self.kd_mode == "kd_fitnet":
-                        s_feat, t_feat = in_pred_feat[i_feat], in_teacher_feat[i_feat]
-
-                    elif self.kd_mode == "kd_at":
-                        s_feat, t_feat = self.kd_at(in_pred_feat[i_feat]), self.kd_at(in_teacher_feat[i_feat])
-
-                    elif self.kd_mode == "kd_fsp":
-                        s_feat = self.kd_fsp(in_pred_feat[i_feat], in_pred_feat[i_feat + 1])
-                        t_feat = self.kd_fsp(in_teacher_feat[i_feat], in_teacher_feat[i_feat + 1])
-
-                    elif self.kd_mode == "kd_fakd":
-                        s_feat, t_feat = self.kd_fakd(in_pred_feat[i_feat]), self.kd_fakd(in_teacher_feat[i_feat])
-
-                    elif self.kd_mode == "kd_bakd":
+                    if self.kd_mode == "kd_bakd":
                         s_feat, t_feat = self.kd_bakd(in_pred_feat[i_feat]), self.kd_bakd(in_teacher_feat[i_feat])
-
-                    elif self.kd_mode == "kd_ofd":
-                        s_feat, t_feat, mask = self.kd_ofd(in_pred_feat[i_feat], in_teacher_feat[i_feat])
-                        loss_feat += _alpha * (self.loss_l1(s_feat, t_feat) * mask).mean()
-                        continue
-
-                    elif self.kd_mode == "kd_mlp":
-                        s_feat = self.kd_mlp(in_pred_feat[i_feat])
-                        t_feat = in_teacher_feat[i_feat]
-
-                    elif self.kd_mode == "kd_attnfd":
-                        s_feat, t_feat = self.kd_attnfd(in_pred_feat[i_feat]), self.kd_attnfd(in_teacher_feat[i_feat])
-
-                    elif self.kd_mode ==  "kd_aicsd":
-                        s_feat, t_feat = self.kd_aicsd(in_pred_feat[i_feat]), self.kd_aicsd(in_teacher_feat[i_feat])
-
                     loss_feat += _alpha * self.loss_l1(s_feat, t_feat)
 
             total_loss = (1 - _alpha) * loss_base + _alpha * (loss_kd + loss_feat / _feat_count)

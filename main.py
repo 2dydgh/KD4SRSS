@@ -40,7 +40,7 @@ if __name__ == '__main__':
 
     #--- args_options.kd_mode
 
-    LIST_KD_MODE = ["kd_origin", "kd_fitnet", "kd_at", "kd_fsp", "kd_fakd", "kd_ofd", "kd_attnfd", "kd_mlp", "kd_bakd"]
+    LIST_KD_MODE = ["kd_origin", "kd_bakd"]
 
     if args_options.kd_mode is not None:
         if args_options.kd_mode not in LIST_KD_MODE:
@@ -50,7 +50,7 @@ if __name__ == '__main__':
         else:
             HP_KD_MODE = args_options.kd_mode
     else:
-        HP_KD_MODE = LIST_KD_MODE[7]
+        HP_KD_MODE = LIST_KD_MODE[1]  # kd_bakd
 
 
     #--- args_options.mixup_a
