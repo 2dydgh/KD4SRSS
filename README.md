@@ -1,9 +1,3 @@
-# KD4SRSS: Knowledge Distillation for Super-resolution Reconstruction and Semantic Segmentation in Frontal-viewing Camera Images of a Vehicle 
-
-This repository contains the code and datasets for the KD4SRSS project.
-
----
-
 ## 1. Datasets
 
 ### CamVid
