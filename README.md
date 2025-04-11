@@ -17,8 +17,7 @@ This repository contains the code and datasets for the KD4SRSS project.
 ---
 
 ## 2. Weights
-
-### CamVid
+<!-- ### CamVid -->
 <!-- - **Aset**: [Download Here](https://drive.google.com/drive/folders/1yfWn74q1bGA7SVFDa1tlvbVhS5VaA-b2?usp=sharing) -->
 - [Download Here](https://drive.google.com/drive/folders/1wGp8W9yiBPc7OCMOFbUvBhYXKXkVVrGy?usp=sharing)
 
