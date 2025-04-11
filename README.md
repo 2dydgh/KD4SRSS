@@ -28,7 +28,7 @@ This repository contains the code and datasets for the KD4SRSS project.
 
 ---
 
-## Setup Instructions
+## 3. Setup Instructions
 
 1) **Clone the repository**:
     ```bash
